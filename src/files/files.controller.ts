@@ -1,51 +1,48 @@
 import { 
   Controller, 
-  FileTypeValidator, 
-  MaxFileSizeValidator, 
-  ParseFilePipe, 
+  ParseFilePipeBuilder, 
   Post, 
-  UseInterceptors 
+  UseInterceptors,
+  HttpStatus,
+  Get,
+  Param,
+  Res, 
 } from '@nestjs/common';
 import { FilesService } from './files.service';
 import { UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { 
-  MAX_FILE_SIZE, 
-  ACCEPTED_FILE_TYPES, 
-  PRODUCTS_DIR 
-} from './shared/constants';
-import { diskStorage } from 'multer';
-import { v4 as uuid } from 'uuid';
+import { MAX_FILE_SIZE } from './shared/constants';
+import { multerOptions } from './helper/multer.helper';
+import express from 'express';
 
 @Controller('files')
 export class FilesController {
   constructor(private readonly filesService: FilesService) {} 
+
+  @Get('product/:filename')
+  getProductFile(
+    @Res() res: express.Response,
+    @Param('filename') filename: string
+  ) {
+    res.sendFile(this.filesService.getProductFile(filename));
+  }
   
   @Post('product')
-  @UseInterceptors(FileInterceptor('file', {
-    storage: diskStorage({
-      destination: PRODUCTS_DIR,
-      filename: (req, file, callback) => {
-        const fileExtension = file.mimetype.split('/')[1];
-        const filename = `${uuid()}.${fileExtension}`;
-        callback(null, filename);
-      },
-    }),
-  }))
+  @UseInterceptors(FileInterceptor('file', multerOptions))
   uploadFile(@UploadedFile(
-    new ParseFilePipe({
-      validators: [
-        new MaxFileSizeValidator({ maxSize: MAX_FILE_SIZE }),
-        new FileTypeValidator({ fileType: ACCEPTED_FILE_TYPES }),
-      ]
-    })
+    new ParseFilePipeBuilder()
+      .addMaxSizeValidator({ maxSize: MAX_FILE_SIZE })
+      .build({
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      }),
   ) file: Express.Multer.File) {
-    console.log(file);
+    
     return {
-      name: file.originalname,
-      size: file.size,
-      encoding: file.encoding,
-      mimetype: file.mimetype,
+      success: true,
+      message: 'File uploaded successfully',
+      data: {
+        name: file.filename,
+      },
     };
   }
 }

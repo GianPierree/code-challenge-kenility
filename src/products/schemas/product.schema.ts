@@ -21,6 +21,9 @@ export class Product {
   @Prop({ required: true, unique: true })
   code: string;
 
+  @Prop()
+  image: string;
+
   @Prop({ default: true })
   status: boolean;
 
