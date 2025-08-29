@@ -8,6 +8,7 @@ import { CommonService } from './common/common.service';
 import { JwtModule } from '@nestjs/jwt';
 import { LoginMiddleware } from './login/login.middleware';
 import { ProductsController } from './products/products.controller';
+import { OrdersController } from './orders/orders.controller';
 import { JWT_SECRET } from './common/common.constants';
 import { FilesModule } from './files/files.module';
 
@@ -37,6 +38,6 @@ export class AppModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(this.loginMiddleware.use.bind(this.loginMiddleware))
-      .forRoutes(ProductsController)
+      .forRoutes(ProductsController, OrdersController)
   }
 }
